@@ -2,38 +2,49 @@
 
 ### send message
 
-path: https://wa1.letsw.com/sendMessage/123/966581796666/test1
+- path: https://wa1.letsw.com/sendMessage/123/966581796666/test1
 
-install:
-curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
-sudo apt install nodejs
+### Server Setup
 
-cd /var/www
-git clone https://letsw@bitbucket.org/letsw/wa.git
-cd wa
-echo "TOKEN" > keys.txt
+#### install:
 
-npm i
+- curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+- sudo apt install nodejs
 
-npm install -g pm2
-pm2 startup systemd
-node add.js
-pm2 start server.config.js
+#### clone project from git
 
+- cd /var/www
+- git clone https://letsw@bitbucket.org/letsw/wa.git
+
+#### generate token
+
+- cd wa
+- echo "TOKEN" > keys.txt
+
+#### run server
+
+- npm i
+- npm install -g pm2
+- pm2 startup systemd
+- node add.js
+- pm2 start server.config.js
+
+#### server config
 
 nginx:
 server {
-	listen 80;
-	listen [::]:80 ;
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2 ;
-	root /var/www/wa;
+listen 80;
+listen [::]:80 ;
+listen 443 ssl http2;
+listen [::]:443 ssl http2 ;
 
-	index index.js ;
+root /var/www/wa;
+
+    index index.js ;
 
     server_name wa1.letsw.com;
 
-	location / {
+    location / {
         # rewrite /api/(.*) /$1  break;
         proxy_redirect off;
         proxy_pass http://localhost:3001;
@@ -42,8 +53,10 @@ server {
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
-	}
+    }
 
 }
+
+#### restart server
 
 service nginx restart
