@@ -1,9 +1,8 @@
-var express = require("express");
-var router = express.Router();
+const router = require("express").Router();
 const fs = require("fs");
+const { MessageType } = require("@adiwajshing/baileys");
 
 const { client } = require("../utils/whatsapp");
-const { MessageType } = require("@adiwajshing/baileys");
 
 router.get("/", function (req, res, next) {
   res.status(200).json({ status: "success" }).end();
@@ -14,13 +13,8 @@ router.get("/sendMessage/:token/:to/:message", async function (req, res, next) {
     const { token, to, message } = req.params;
     const keys = fs.readFileSync("keys.txt").toString().split("\n");
 
-    if (
-      token === keys[0] ||
-      (token === "123" && keys.find((el) => el === to))
-    ) {
-      const isAlive = await client.isOnWhatsApp(
-        to.replace(/\D/g, "") + "@c.us"
-      );
+    if (token === keys[0] || (token === "123" && keys.find((el) => el === to))) {
+      const isAlive = await client.isOnWhatsApp(to.replace(/\D/g, "") + "@c.us");
 
       if (!isAlive) {
         res
@@ -34,11 +28,7 @@ router.get("/sendMessage/:token/:to/:message", async function (req, res, next) {
         return;
       }
 
-      client.sendMessage(
-        to.replace(/\D/g, "") + "@s.whatsapp.net",
-        message.replace(/\+/g, " "),
-        MessageType.text
-      );
+      client.sendMessage(to.replace(/\D/g, "") + "@s.whatsapp.net", message.replace(/\+/g, " "), MessageType.text);
 
       res.status(200).json({ status: "success" }).end();
     } else {

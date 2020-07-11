@@ -8,8 +8,9 @@ const cors = require("cors");
 
 const indexRouter = require("./routes/index");
 
-const whatsApp = require("./utils/whatsapp");
+const { whatsApp } = require("./utils/whatsapp");
 const { slack } = require("./utils/slack");
+const { csv } = require("./utils/csv");
 
 while (!fs.existsSync("auth_info.json")) {
   console.log("No auth_info.json, retry in 10 seconds");
@@ -17,15 +18,12 @@ while (!fs.existsSync("auth_info.json")) {
   while (waitTill > new Date()) {}
 }
 
-whatsApp
-  .connectWhatsAppClient()
-  .then(() => {})
-  .catch((err) => {
-    if (err && err[0] === 401) fs.unlinkSync("auth_info.json");
-    console.error("ERROR connecting: ", JSON.stringify(err, null, 2));
-  });
-
+// get initial data
+csv.getBotData();
 slack.getChannel();
+
+// init whatsapp host
+whatsApp.connect();
 
 const app = express();
 

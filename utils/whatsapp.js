@@ -1,103 +1,92 @@
-const {
-  WAClient,
-  MessageType,
-  getNotificationType,
-  Mimetype,
-} = require("@adiwajshing/baileys");
 const fs = require("fs");
-const path = require("path");
-const csvtojsonV2 = require("csvtojson/v2");
 const axios = require("axios").default;
+const { WAClient, MessageType, getNotificationType, Mimetype } = require("@adiwajshing/baileys");
 
 const { slack } = require("./slack");
+const { csv } = require("./csv");
 
-const readCsv = () => {
-  return new Promise((resolve, _ignore1) => {
-    csvtojsonV2()
-      .fromFile(path.join(__dirname, "../bot.csv"))
-      .then((objArr) => {
-        const result = objArr.map((obj) => {
-          const [item] = Object.entries(obj).map(([_ignore2, value]) => {
-            return value.split(";");
-          });
-          return item;
-        });
-        resolve(result);
+const WASingleton = (function () {
+  function WAInstance() {
+    this._client = {};
+    this._authInfo = {};
+    this._hostUser = {};
+    this._clientUser = {};
+  }
+
+  WAInstance.prototype = {
+    _init: function () {
+      this._authInfo = JSON.parse(fs.readFileSync("auth_info.json"));
+      this._client = new WAClient();
+      this._client.autoReconnect = true;
+    },
+    _addWAEventListener: function () {
+      this._client.setOnUnreadMessage(true, async (msg) => {
+        this._clientUser = msg.key.remoteJid;
+        const [_ignore, messageType] = getNotificationType(msg);
+
+        if (messageType === MessageType.text) {
+          const conversation = msg.message.conversation;
+          const botMsg = csv.getBotDataByInput(conversation);
+
+          if (!botMsg) return;
+
+          const out = botMsg[1].replace(/\"/g, "");
+          const img = botMsg[2];
+
+          if (img) {
+            this._sendMediaMsg(this._clientUser, img, out);
+          } else {
+            this._sendTxtMsg(this._clientUser, out);
+          }
+        }
       });
-  });
-};
 
-const getBotMsg = (msgs, input) => {
-  const result = msgs.find((msg) => msg[0] === input);
-  return result;
-};
+      this._client.setOnUnexpectedDisconnect((err) => {
+        console.error("disconnected unexpectedly: ", JSON.stringify(err, null, 2));
+      });
+    },
+    _sendTxtMsg: function (to, msg) {
+      this._client.sendMessage(to, msg, MessageType.text);
+    },
+    _sendMediaMsg: async function (to, media, msg) {
+      const imgBuff = await axios.get(media, {
+        responseType: "arraybuffer",
+      });
+      const opt = { mimetype: Mimetype.jpeg, caption: msg };
 
-const client = new WAClient();
-client.autoReconnect = true;
+      this._client.sendMessage(to, imgBuff.data, MessageType.image, opt);
+    },
+    connect: async function () {
+      try {
+        this._init();
+        const hostUser = await this._client.connectSlim(this._authInfo, 20 * 1000);
+        this._hostUser = hostUser;
 
-const connectWhatsAppClient = async () => {
-  const botMsgs = await readCsv();
+        this._sendTxtMsg(this._hostUser.id, "Welcome");
 
-  return new Promise((resolve, reject) => {
-    try {
-      // load a closed session back if it exists
-      const file = fs.readFileSync("auth_info.json");
-      authInfo = JSON.parse(file);
+        this._addWAEventListener();
+      } catch (err) {
+        if (err && err[0] === 401) fs.unlinkSync("../auth_info.json");
+        console.error("ERROR connecting: ", JSON.stringify(err, null, 2));
+      }
+    },
+  };
 
-      client
-        .connectSlim(authInfo, 20 * 1000) // connect or timeout in 20 seconds
-        .then(async (user) => {
-          client.sendMessage(user.id, "Welcome", MessageType.text);
+  let instance;
 
-          client.setOnUnreadMessage(true, async (msg) => {
-            const [_ignore, messageType] = getNotificationType(msg);
+  function createWAInstance() {
+    instance = new WAInstance();
+    return instance;
+  }
 
-            if (messageType === MessageType.text) {
-              slack.onSendMsg(msg);
+  return {
+    getWAInstance: () => {
+      if (!instance) instance = createWAInstance();
+      return instance;
+    },
+  };
+})();
 
-              const conversation = msg.message.conversation;
-              const botMsg = getBotMsg(botMsgs, conversation);
+const whatsApp = WASingleton.getWAInstance();
 
-              if (!botMsg) return;
-
-              out = botMsg[1].replace(/\"/g, "");
-              img = botMsg[2];
-
-              if (img) {
-                const imgBuff = await axios.get(img, {
-                  responseType: "arraybuffer",
-                });
-                const opt = { mimetype: Mimetype.jpeg, caption: out };
-
-                client.sendMessage(
-                  msg.key.remoteJid,
-                  imgBuff.data,
-                  MessageType.image,
-                  opt
-                );
-              } else {
-                client.sendMessage(msg.key.remoteJid, out, MessageType.text);
-              }
-            }
-          });
-
-          client.setOnUnexpectedDisconnect((err) => {
-            console.error(
-              "disconnected unexpectedly: ",
-              JSON.stringify(err, null, 2)
-            );
-          });
-          resolve({ user });
-        })
-        .catch((err) => {
-          console.log("Connect error: " + err);
-          reject();
-        });
-    } catch (err) {
-      console.log("Promise error: " + err);
-      reject();
-    }
-  });
-};
-
-module.exports = { client, connectWhatsAppClient };
+module.exports = { whatsApp };
