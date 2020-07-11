@@ -42,7 +42,7 @@ const WASingleton = (function () {
       });
 
       this._client.setOnUnexpectedDisconnect((err) => {
-        console.error("disconnected unexpectedly: ", JSON.stringify(err, null, 2));
+        console.error("whatsapp disconnected: ", JSON.stringify(err, null, 2));
       });
     },
     _sendTxtMsg: function (to, msg) {
