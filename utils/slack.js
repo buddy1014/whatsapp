@@ -10,18 +10,33 @@ const SlackSingleton = (function () {
 
   SlackInstance.prototype = {
     getChannel: async function () {
-      const { data } = await axios.get(
-        `${slackConfig.base}/conversations.list`,
-        {
-          headers: { Authorization: `Bearer ${slackConfig["bot-token"]}` },
-        }
-      );
-      this._channel = data.channels.find(
-        (channel) => channel.name === slackConfig.chanel
-      );
+      try {
+        const { data } = await axios.get(
+          `${slackConfig.base}/conversations.list`,
+          {
+            headers: { Authorization: `Bearer ${slackConfig["oAuth-token"]}` },
+          }
+        );
+
+        if (!data.channels) return;
+
+        this._channel = data.channels.find(
+          (channel) => channel.name === slackConfig.chanel
+        );
+      } catch (err) {
+        console.error(
+          "get slack channel error: ",
+          JSON.stringify(err, null, 2)
+        );
+      }
     },
     onReceiveMsg: function () {},
     onSendMsg: function (msg) {
+      if (!this._channel.id) {
+        console.error("no channel exist");
+        return;
+      }
+
       this.sendMsgToSlack(this._channel.id, msg.message.conversation);
     },
     sendMsgToSlack: async function (channel, text) {

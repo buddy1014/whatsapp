@@ -1,18 +1,19 @@
-var createError = require("http-errors");
+const createError = require("http-errors");
 const fs = require("fs");
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
+const cors = require("cors");
 
-var indexRouter = require("./routes/index");
+const indexRouter = require("./routes/index");
 
 const whatsApp = require("./utils/whatsapp");
 const { slack } = require("./utils/slack");
 
 while (!fs.existsSync("auth_info.json")) {
   console.log("No auth_info.json, retry in 10 seconds");
-  var waitTill = new Date(new Date().getTime() + 10 * 1000);
+  const waitTill = new Date(new Date().getTime() + 10 * 1000);
   while (waitTill > new Date()) {}
 }
 
@@ -26,7 +27,10 @@ whatsApp
 
 slack.getChannel();
 
-var app = express();
+const app = express();
+
+// allow all cors
+app.use(cors());
 
 app.use(logger("dev"));
 app.use(express.json());
