@@ -4,12 +4,11 @@ var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
-//var reload = require("reload");
 
 var indexRouter = require("./routes/index");
-var authInfo = null;
 
 const whatsApp = require("./utils/whatsapp");
+const { slack } = require("./utils/slack");
 
 while (!fs.existsSync("auth_info.json")) {
   console.log("No auth_info.json, retry in 10 seconds");
@@ -21,10 +20,11 @@ whatsApp
   .connectWhatsAppClient()
   .then(() => {})
   .catch((err) => {
+    if (err && err[0] === 401) fs.unlinkSync("auth_info.json");
     console.error("ERROR connecting: ", JSON.stringify(err, null, 2));
-    if (err[0] == 401) fs.unlinkSync("auth_info.json");
-    //    reload(app)
   });
+
+slack.getChannel();
 
 var app = express();
 

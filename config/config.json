@@ -1,0 +1,16 @@
+{
+  "slack": {
+    "app-name": "slack-integrating",
+    "app-id": "A017A6807LZ",
+    "client-id": "1233185594741.1248212007713",
+    "client-secret": "2fbeeeba70f95fd742024e8193a5f25c",
+    "signing-secret": "e75d2d38d85fa7d5ed3c430341dc73de",
+    "token": "WkNykL9AGmXol9AIZwQtjDgg",
+    "oAuth-token": "xoxp-1233185594741-1233186063317-1228862153254-0c96d1a628781a4ee565846d76205b60",
+    "bot-token": "xoxb-1233185594741-1220850823287-1cCONzMY1iHi7cS6p4yWmN9o",
+    "base": "https://slack.com/api",
+    "chanel": "helpdesk",
+    "thread": "slack-thread-id"
+  },
+  "whatsapp": {}
+}

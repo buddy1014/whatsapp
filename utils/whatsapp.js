@@ -9,6 +9,8 @@ const path = require("path");
 const csvtojsonV2 = require("csvtojson/v2");
 const axios = require("axios").default;
 
+const { slack } = require("./slack");
+
 const readCsv = () => {
   return new Promise((resolve, _ignore1) => {
     csvtojsonV2()
@@ -51,6 +53,8 @@ const connectWhatsAppClient = async () => {
             const [_ignore, messageType] = getNotificationType(msg);
 
             if (messageType === MessageType.text) {
+              slack.onSendMsg(msg);
+
               const conversation = msg.message.conversation;
               const botMsg = getBotMsg(botMsgs, conversation);
 
