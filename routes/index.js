@@ -56,4 +56,8 @@ router.get("/sendMessage/:token/:to/:message", async function (req, res, next) {
   }
 });
 
+router.post("/slack-message", async function (req, res, next) {
+  console.log("on send message from slack: ", req.body);
+});
+
 module.exports = router;
