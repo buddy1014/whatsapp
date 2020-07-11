@@ -1,6 +1,6 @@
-## Here is list of endpoints:
+### list of endpoints:
 
-### send message
+#### send message to whatsapp
 
 - path: https://wa1.letsw.com/sendMessage/123/966581796666/test1
 
@@ -31,6 +31,7 @@
 
 #### server config
 
+```
 nginx:
 server {
 listen 80;
@@ -57,6 +58,8 @@ root /var/www/wa;
 
 }
 
+```
+
 #### restart server
 
-service nginx restart
+- service nginx restart
