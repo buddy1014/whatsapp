@@ -21,7 +21,12 @@ const WASingleton = (function () {
     },
     _addWAEventListener: function () {
       this._client.setOnUnreadMessage(true, async (msg) => {
-        this._clientUser = msg.key.remoteJid;
+        const { remoteJid, id } = msg.key;
+        this._clientUser = remoteJid;
+
+        // make message as read status
+        await this._client.sendReadReceipt(this._clientUser, id);
+
         const [_ignore, messageType] = getNotificationType(msg);
 
         if (messageType === MessageType.text) {
